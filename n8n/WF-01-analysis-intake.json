@@ -1,0 +1,84 @@
+{
+  "name": "WF-01 Analysis Intake",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "analysis-intake",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.analysis_id }}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      },
+      "name": "Validate Input",
+      "type": "n8n-nodes-base.if",
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.BACKEND_URL }}/v1/analyses/{{ $json.analysis_id }}/status",
+        "method": "GET",
+        "options": {}
+      },
+      "name": "Check Job Exists",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [680, 260]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.BACKEND_URL }}/v1/webhooks/n8n/job-completed",
+        "method": "POST",
+        "body": {
+          "analysis_id": "={{ $json.analysis_id }}",
+          "status": "failed",
+          "error_message": "Invalid input — analysis_id missing"
+        },
+        "options": {}
+      },
+      "name": "Report Invalid",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [680, 400]
+    },
+    {
+      "parameters": {
+        "workflowId": "WF-02-research-orchestrator",
+        "options": {}
+      },
+      "name": "Trigger Research Orchestrator",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "position": [900, 260]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"analysis_id\": \"{{ $json.analysis_id }}\", \"status\": \"queued\" }"
+      },
+      "name": "Return Job ID",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "position": [1120, 260]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": { "main": [[{ "node": "Validate Input", "type": "main", "index": 0 }]] },
+    "Validate Input": {
+      "main": [
+        [{ "node": "Check Job Exists", "type": "main", "index": 0 }],
+        [{ "node": "Report Invalid", "type": "main", "index": 0 }]
+      ]
+    },
+    "Check Job Exists": { "main": [[{ "node": "Trigger Research Orchestrator", "type": "main", "index": 0 }]] },
+    "Trigger Research Orchestrator": { "main": [[{ "node": "Return Job ID", "type": "main", "index": 0 }]] }
+  }
+}

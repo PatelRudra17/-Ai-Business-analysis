@@ -1,0 +1,41 @@
+{
+  "name": "WF-12 AI Report Writer",
+  "nodes": [
+    { "parameters": {}, "name": "Trigger", "type": "n8n-nodes-base.executeWorkflowTrigger", "position": [240, 300] },
+    {
+      "parameters": {
+        "url": "={{ $env.BACKEND_URL }}/v1/internal/generate-report",
+        "method": "POST",
+        "body": { "analysis_id": "={{ $json.analysis_id }}" }
+      },
+      "name": "Generate Report",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.BACKEND_URL }}/v1/internal/check-claims",
+        "method": "POST",
+        "body": { "report_id": "={{ $json.report_id }}" }
+      },
+      "name": "Claim Checker",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.BACKEND_URL }}/v1/internal/generate-pdf",
+        "method": "POST",
+        "body": { "report_id": "={{ $json.report_id }}" }
+      },
+      "name": "Generate PDF",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [900, 300]
+    }
+  ],
+  "connections": {
+    "Trigger": { "main": [[{ "node": "Generate Report", "type": "main", "index": 0 }]] },
+    "Generate Report": { "main": [[{ "node": "Claim Checker", "type": "main", "index": 0 }]] },
+    "Claim Checker": { "main": [[{ "node": "Generate PDF", "type": "main", "index": 0 }]] }
+  }
+}

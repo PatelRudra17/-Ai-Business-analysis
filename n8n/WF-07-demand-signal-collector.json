@@ -1,0 +1,36 @@
+{
+  "name": "WF-07 Demand Signal Collector",
+  "nodes": [
+    { "parameters": {}, "name": "Trigger", "type": "n8n-nodes-base.executeWorkflowTrigger", "position": [240, 300] },
+    {
+      "parameters": {
+        "url": "={{ $env.BACKEND_URL }}/v1/internal/collect-signals",
+        "method": "POST",
+        "body": {
+          "analysis_id": "={{ $json.analysis_id }}",
+          "lat": "={{ $json.latitude }}",
+          "lng": "={{ $json.longitude }}",
+          "radius": "={{ $json.radius_meters }}",
+          "signal_types": "={{ $json.positive_signals }}"
+        }
+      },
+      "name": "Search Nearby Signals",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.BACKEND_URL }}/v1/internal/group-signals-by-ring",
+        "method": "POST",
+        "body": { "analysis_id": "={{ $json.analysis_id }}" }
+      },
+      "name": "Group by Distance Ring",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [680, 300]
+    }
+  ],
+  "connections": {
+    "Trigger": { "main": [[{ "node": "Search Nearby Signals", "type": "main", "index": 0 }]] },
+    "Search Nearby Signals": { "main": [[{ "node": "Group by Distance Ring", "type": "main", "index": 0 }]] }
+  }
+}

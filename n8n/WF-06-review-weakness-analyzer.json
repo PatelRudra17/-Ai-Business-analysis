@@ -1,0 +1,49 @@
+{
+  "name": "WF-06 Review Weakness Analyzer",
+  "nodes": [
+    { "parameters": {}, "name": "Trigger", "type": "n8n-nodes-base.executeWorkflowTrigger", "position": [240, 300] },
+    {
+      "parameters": {
+        "url": "={{ $env.BACKEND_URL }}/v1/internal/review-samples",
+        "method": "GET",
+        "queryParameters": { "analysis_id": "={{ $json.analysis_id }}" }
+      },
+      "name": "Load Review Samples",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://api.anthropic.com/v1/messages",
+        "method": "POST",
+        "headers": {
+          "x-api-key": "={{ $env.AI_API_KEY }}",
+          "anthropic-version": "2023-06-01"
+        },
+        "body": {
+          "model": "claude-haiku-4-5-20251001",
+          "max_tokens": 512,
+          "messages": [{ "role": "user", "content": "Classify this review: {{ $json.text }}" }]
+        }
+      },
+      "name": "AI Theme Extractor",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.BACKEND_URL }}/v1/internal/save-themes",
+        "method": "POST",
+        "body": { "analysis_id": "={{ $json.analysis_id }}", "themes": "={{ $json.themes }}" }
+      },
+      "name": "Save Weakness Categories",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [900, 300]
+    }
+  ],
+  "connections": {
+    "Trigger": { "main": [[{ "node": "Load Review Samples", "type": "main", "index": 0 }]] },
+    "Load Review Samples": { "main": [[{ "node": "AI Theme Extractor", "type": "main", "index": 0 }]] },
+    "AI Theme Extractor": { "main": [[{ "node": "Save Weakness Categories", "type": "main", "index": 0 }]] }
+  }
+}

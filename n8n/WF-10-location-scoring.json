@@ -1,0 +1,30 @@
+{
+  "name": "WF-10 Location Scoring",
+  "nodes": [
+    { "parameters": {}, "name": "Trigger", "type": "n8n-nodes-base.executeWorkflowTrigger", "position": [240, 300] },
+    {
+      "parameters": {
+        "url": "={{ $env.BACKEND_URL }}/v1/internal/calculate-score",
+        "method": "POST",
+        "body": { "analysis_id": "={{ $json.analysis_id }}" }
+      },
+      "name": "Calculate Score",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.BACKEND_URL }}/v1/internal/save-score",
+        "method": "POST",
+        "body": { "analysis_id": "={{ $json.analysis_id }}", "score": "={{ $json }}" }
+      },
+      "name": "Save Score Version",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [680, 300]
+    }
+  ],
+  "connections": {
+    "Trigger": { "main": [[{ "node": "Calculate Score", "type": "main", "index": 0 }]] },
+    "Calculate Score": { "main": [[{ "node": "Save Score Version", "type": "main", "index": 0 }]] }
+  }
+}

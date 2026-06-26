@@ -1,0 +1,124 @@
+{
+  "name": "WF-02 Research Orchestrator",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Execute Workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.BACKEND_URL }}/v1/analyses/{{ $json.analysis_id }}/status",
+        "method": "GET"
+      },
+      "name": "Load Job Data",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.BACKEND_URL }}/v1/business-categories/{{ $json.category_id }}/config",
+        "method": "GET"
+      },
+      "name": "Load Business Config",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "workflowId": "WF-04-competitor-collector",
+        "options": {}
+      },
+      "name": "Run Competitor Collector",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "position": [900, 200]
+    },
+    {
+      "parameters": {
+        "workflowId": "WF-07-demand-signal-collector",
+        "options": {}
+      },
+      "name": "Run Demand Signal Collector",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "position": [900, 340]
+    },
+    {
+      "parameters": {
+        "workflowId": "WF-08-demographic-mapper",
+        "options": {}
+      },
+      "name": "Run Demographic Mapper",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "position": [900, 480]
+    },
+    {
+      "parameters": {
+        "workflowId": "WF-06-review-weakness-analyzer",
+        "options": {}
+      },
+      "name": "Run Review Analyzer",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "position": [1120, 200]
+    },
+    {
+      "parameters": {
+        "workflowId": "WF-10-location-scoring",
+        "options": {}
+      },
+      "name": "Run Scoring Engine",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "position": [1340, 300]
+    },
+    {
+      "parameters": {
+        "workflowId": "WF-11-financial-engine",
+        "options": {}
+      },
+      "name": "Run Financial Engine",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "position": [1340, 440]
+    },
+    {
+      "parameters": {
+        "workflowId": "WF-12-ai-report-writer",
+        "options": {}
+      },
+      "name": "Run AI Report Writer",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "position": [1560, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.BACKEND_URL }}/v1/webhooks/n8n/job-completed",
+        "method": "POST",
+        "body": {
+          "analysis_id": "={{ $json.analysis_id }}",
+          "status": "completed",
+          "workflow_steps": {}
+        }
+      },
+      "name": "Mark Completed",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [1780, 300]
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger": { "main": [[{ "node": "Load Job Data", "type": "main", "index": 0 }]] },
+    "Load Job Data": { "main": [[{ "node": "Load Business Config", "type": "main", "index": 0 }]] },
+    "Load Business Config": {
+      "main": [[
+        { "node": "Run Competitor Collector", "type": "main", "index": 0 },
+        { "node": "Run Demand Signal Collector", "type": "main", "index": 0 },
+        { "node": "Run Demographic Mapper", "type": "main", "index": 0 }
+      ]]
+    },
+    "Run Competitor Collector": { "main": [[{ "node": "Run Review Analyzer", "type": "main", "index": 0 }]] },
+    "Run Review Analyzer": { "main": [[{ "node": "Run Scoring Engine", "type": "main", "index": 0 }]] },
+    "Run Demand Signal Collector": { "main": [[{ "node": "Run Scoring Engine", "type": "main", "index": 0 }]] },
+    "Run Demographic Mapper": { "main": [[{ "node": "Run Scoring Engine", "type": "main", "index": 0 }]] },
+    "Run Scoring Engine": { "main": [[{ "node": "Run AI Report Writer", "type": "main", "index": 0 }]] },
+    "Run Financial Engine": { "main": [[{ "node": "Run AI Report Writer", "type": "main", "index": 0 }]] },
+    "Run AI Report Writer": { "main": [[{ "node": "Mark Completed", "type": "main", "index": 0 }]] }
+  }
+}

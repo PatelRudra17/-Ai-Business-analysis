@@ -1,0 +1,56 @@
+{
+  "name": "WF-15 Weekly Monitoring",
+  "nodes": [
+    {
+      "parameters": { "rule": { "interval": [{ "field": "weeks", "weeksInterval": 1 }] } },
+      "name": "Weekly Schedule",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.BACKEND_URL }}/v1/alerts/subscriptions/active",
+        "method": "GET"
+      },
+      "name": "Load Active Subscriptions",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.BACKEND_URL }}/v1/internal/refresh-competitor-data",
+        "method": "POST",
+        "body": { "subscription_id": "={{ $json.id }}" }
+      },
+      "name": "Refresh Competitor Data",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.BACKEND_URL }}/v1/internal/compare-snapshots",
+        "method": "POST",
+        "body": { "subscription_id": "={{ $json.id }}" }
+      },
+      "name": "Compare Snapshots",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.BACKEND_URL }}/v1/internal/send-alerts",
+        "method": "POST",
+        "body": { "subscription_id": "={{ $json.id }}", "changes": "={{ $json.changes }}" }
+      },
+      "name": "Send Alerts",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [1120, 300]
+    }
+  ],
+  "connections": {
+    "Weekly Schedule": { "main": [[{ "node": "Load Active Subscriptions", "type": "main", "index": 0 }]] },
+    "Load Active Subscriptions": { "main": [[{ "node": "Refresh Competitor Data", "type": "main", "index": 0 }]] },
+    "Refresh Competitor Data": { "main": [[{ "node": "Compare Snapshots", "type": "main", "index": 0 }]] },
+    "Compare Snapshots": { "main": [[{ "node": "Send Alerts", "type": "main", "index": 0 }]] }
+  }
+}

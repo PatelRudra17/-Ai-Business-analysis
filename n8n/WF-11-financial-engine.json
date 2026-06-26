@@ -1,0 +1,19 @@
+{
+  "name": "WF-11 Financial Scenario Engine",
+  "nodes": [
+    { "parameters": {}, "name": "Trigger", "type": "n8n-nodes-base.executeWorkflowTrigger", "position": [240, 300] },
+    {
+      "parameters": {
+        "url": "={{ $env.BACKEND_URL }}/v1/internal/financial-scenarios",
+        "method": "POST",
+        "body": { "analysis_id": "={{ $json.analysis_id }}" }
+      },
+      "name": "Calculate Scenarios",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [460, 300]
+    }
+  ],
+  "connections": {
+    "Trigger": { "main": [[{ "node": "Calculate Scenarios", "type": "main", "index": 0 }]] }
+  }
+}

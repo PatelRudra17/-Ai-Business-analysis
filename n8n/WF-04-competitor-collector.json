@@ -1,0 +1,36 @@
+{
+  "name": "WF-04 Competitor Collector",
+  "nodes": [
+    { "parameters": {}, "name": "Trigger", "type": "n8n-nodes-base.executeWorkflowTrigger", "position": [240, 300] },
+    {
+      "parameters": {
+        "url": "={{ $env.BACKEND_URL }}/v1/internal/collect-competitors",
+        "method": "POST",
+        "body": {
+          "analysis_id": "={{ $json.analysis_id }}",
+          "lat": "={{ $json.latitude }}",
+          "lng": "={{ $json.longitude }}",
+          "radius": "={{ $json.radius_meters }}",
+          "queries": "={{ $json.competitor_queries }}"
+        }
+      },
+      "name": "Collect via Google Places",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.BACKEND_URL }}/v1/internal/deduplicate-places",
+        "method": "POST",
+        "body": { "analysis_id": "={{ $json.analysis_id }}" }
+      },
+      "name": "Deduplicate by Place ID",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [680, 300]
+    }
+  ],
+  "connections": {
+    "Trigger": { "main": [[{ "node": "Collect via Google Places", "type": "main", "index": 0 }]] },
+    "Collect via Google Places": { "main": [[{ "node": "Deduplicate by Place ID", "type": "main", "index": 0 }]] }
+  }
+}
